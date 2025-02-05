@@ -1,0 +1,48 @@
+[tool.poetry]
+name = "fastapi-data-preprocessing"
+version = "0.1.0"
+description = "Time series anaylsis and data preprocessing"
+authors = [
+    "Fabrizio De Castelli <decastellifabrizio@gmail.com>",
+]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "app", from = "src"}]
+
+[MASTER]
+init-hook='import sys; sys.path.append(".")'
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.115.5"
+uvicorn = "^0.23.0"
+python-dotenv = "^1.0.1"
+aiokafka = "^0.12.0"
+kafka-python = "^2.0.2"
+pandas = "^2.2.3"
+requests = "^2.32.3"
+pytest = "^8.3.4"
+keras = "^3.7.0"
+river = "^0.22.0"
+optuna = "^4.1.0"
+scikit-learn = "^1.5.2"
+statsmodels = "^0.14.4"
+tensorflow = "^2.18.0"
+matplotlib = "^3.9.3"
+jupyter = "^1.1.1"
+lime = "^0.2.0"
+dill = "^0.3.4"
+
+[tool.poetry.dev-dependencies]
+black = "^24.3"         # Code formatter
+ruff = "^0.7.4"
+
+[tool.ruff]
+line-length = 100
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+start = "src.app.main:start"

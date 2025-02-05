@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - Topic 3</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+            margin-left: 220px; /* Adjusted for the navigation panel */
+        }
+        header, main {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 0.5em;
+        }
+        header p {
+            margin: 0;
+            color: #555;
+        }
+        h2 {
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+            margin-top: 1.5em;
+        }
+        ul {
+            list-style: square;
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        code, pre {
+            background: #f4f4f4;
+            padding: 5px;
+            border: 1px solid #ddd;
+            font-family: Consolas, monospace;
+        }
+	kbd {
+            background: #f4f4f4;
+            padding: 1px;
+            /* border: 1px solid #ddd; */
+            font-family: Consolas, monospace;			
+	}
+        pre {
+            overflow-x: auto;
+            padding: 10px;
+        }
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 220px;
+            height: 100%;
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <h2>Navigation</h2>
+        <a href="#introduction">Introduction</a>
+        <a href="#methods-and-documentation">Methods and Documentation</a>
+        <ul>
+			<li><a href="#connections_functions">connections_functions.py</a></li>
+            <li><a href="#on_request_pipeline">on_request_pipeline.py</a></li>
+            <li><a href="#streaming_pipeline">streaming_pipeline.py</a></li>
+            <li><a href="#dataprocessing_functions">dataprocessing_functions.py</a></li>
+        </ul>
+    </nav>
+    <header>
+        <h1>API Documentation - Topic 3</h1>
+        <p>Version: 1.0 | Last Updated: 08/12/2024</p>
+        <p>Authors: Alice Guizzonato, Aura Giovanna Lola Natale Angelini, Caponio Massimiliano Gaetano.</p>
+    </header>
+    <main>
+		<h2 id="introduction">Introduction</h2>
+		<p>
+			This is the documentation for the Python interface implemented by Topic 3 to allow data processing of KPIs data. 
+			The code and the ML pipelines can be found in the GitHub repository at this <a href="https://github.com/Kreative-Performative-Individuals/data-preprocessing-/tree/feat/kafka-integration">link</a>.
+		</p>
+		<p>The main files for the application can be found in <code>data-preprocessing-/src/app</code>:</p>
+		<ul>
+			<li>
+				<code>config.py</code>: it will set up all the file positions that will be used by all the other functions. 
+				Additionally, it will initialize the <code>MailSender</code> class 
+				(present in <code>data-preprocessing-\data-preprocessing-\src\app\notification\mail_sender.py</code>) 
+				with the right email addresses for the alert notification.
+			</li>
+			<li>
+				<code>streaming_pipeline.py</code>: the pipeline that is deputed to the continuous reception, 
+				cleaning the received data point in real time and checking if any concept drift has occurred 
+				or if the datapoint itself is an anomaly.
+			</li>
+			<li>
+				<code>on_request_pipeline.py</code>: the pipeline that starts whenever a request for forecasting 
+				or feature engineering is received and ends when the result is delivered to the requester.
+			</li>
+		</ul>
+		<p>These last 2 files, in turn, will call all the others to implement specific features of the corresponding pipelines. 
+		They are organized into two files:</p>
+		<ul>
+			<li>
+				<code>dataprocessing_functions.py</code>: it contains the main functions and classes of the data processing pipeline.
+			</li>
+			<li>
+				<code>connection_functions.py</code>: it contains all the necessary connections to other part of the application.
+			</li>
+		</ul>
+		<p>In addition:</p>
+		<ul>
+			<li>
+				In the folder <code>data</code>, JSON files (such as <code>cleaned_predicted_dataset.json</code> and 
+				<code>historical_dataset.json</code> that are used as a mockup for historical data, 
+				<code>original_adapted_dataset.json</code> exploited to simulate the stream) can be found that are 
+				useful to mock connections and test the pipeline by its own. Also, there is the file 'store.pkl' that is used as a local store for useful structures that are used by other functions of the pipelines (batches for imputation and drift detection, AnomalyDetector models, TDNN models for forecasting)
+			</li>
+			<li>
+				In the folder <code>notification</code> there is the file <code>mail_sender.py</code> containing the 
+				class responsible for the physical sending of the alert email.
+			</li>
+		</ul>
+
+
+
+
+
+        <h2 id="methods-and-documentation">Methods and Documentation</h2>
+
+
+
+
+		<h3 id="connection_functions">connection_functions.py</h3>
+
+		<ul>
+			<li><h4>Function: <code>get_datapoint(i)</code></h4>
+				<p><strong>Description:</strong> fetches a single data from the stream dataset (original_adapted_dataset.json) based on the provided index.</p>
+				<p><strong>Parameters:</strong></p>
+				<ul>
+					<li><kbd>i</kbd> (<em>int</em>): The index of the data point to retrieve.</li>
+				</ul>
+				<p><strong>Returns:</strong></p>
+				<p>A dictionary containing the single datapoint as a dictionary with keys (<kbd>time</kbd>, <kbd>asset_id</kbd>, <kbd>name</kbd>, <kbd>kpi</kbd>, <kbd>operation</kbd>, and feature values).</p>
+	
+				<p><strong>Example usage:</strong></p>
+				<pre>
+	>>>datapoint = get_datapoint(5)
+	{'time': '2024-09-17 00:00:00+00:00',
+	 'asset_id': 'ast-sfio4727eub0',
+	 'name': 'assembly',
+	 'kpi': 'consumption',
+	 'operation': 'idle',
+	 'sum': 0.0,
+	 'avg': 0.0,
+	 'min': 0.0,
+	 'max': 0.0,
+	 'var': nan,
+	 'status': nan}
+	</pre>
+			</li>
+	
+			<li><h4>Function: <code>get_historical_data(machine_name, asset_id, kpi, operation, timestamp_start, timestamp_end)</code></h4>
+				<p><strong>Description:</strong> Retrieves historical data filtered based on machine identity, KPI, and operation over a specified time range.</p>
+				<p><strong>Parameters:</strong></p>
+				<ul>
+					<li><kbd>machine_name</kbd> (<em>str</em>): Name of the machine.</li>
+					<li><kbd>asset_id</kbd> (<em>str</em>): Identifier of the asset.</li>
+					<li><kbd>kpi</kbd> (<em>str</em>): Key Performance Indicator to filter.</li>
+					<li><kbd>operation</kbd> (<em>str</em>): Operation type to filter (e.g., "working").</li>
+					<li><kbd>timestamp_start</kbd> (<em>str</em>): Start of the time range. Default is set at a predefined number of days before the 'timestamp_end' (e.g., 100).</li>
+					<li><kbd>timestamp_end</kbd> (<em>str</em>): End of the time range. Default is set to the timestamp of the last datapoint in the historical data. </li>
+				</ul>
+				<p><strong>Returns:</strong></p>
+				<p>A Pandas DataFrame containing the filtered historical data.</p>
+			
+				<p><strong>Example usage:</strong></p>
+				<pre>
+	>>>historical_data = get_historical_data(
+		machine_name="Large Cutting Machine 1",
+		asset_id="ast-yhccl1zjue2t",
+		kpi="time",
+		operation="working",
+		timestamp_start='2024-08-17 00:00:00+00:00',
+		timestamp_end='2024-10-17 00:00:00+00:00'
+	)
+	
+	</pre>
+			</li>
+	
+			<li><h4>Function: <code>send_alert(identity, type, counter=None, probability=None)</code></h4>
+				<p><strong>Description:</strong> Sends an alert notification via mail whenever an anomaly or acquisition malfunctioning has been detected.</p>
+				<p><strong>Parameters:</strong></p>
+				<ul>
+					<li><kbd>identity</kbd> (<em>dict</em>): Machine name, asset identificator, KPI and operation of the datapoint for which the anomalous behavior has been detected.</li>
+					<li><kbd>type</kbd> (<em>str</em>): Type of alert, either <kbd>'Anomaly'</kbd> or <kbd>'Nan'</kbd>.</li>
+					<li><kbd>counter</kbd> (<em>int</em>, optional): Number of consecutive days in which the acquisition of datapoints for the specific KPI and machine has reported problems (used only for <kbd>'NaN'</kbd> type alerts).</li>
+					<li><kbd>probability</kbd> (<em>float</em>, optional): Probability for an anomaly to be correct (used for <kbd>'Anomaly'</kbd> type alerts).</li>
+				</ul>
+				<p><strong>Returns:</strong></p>
+				<p>None (it just sends a mail to user).</p>
+	
+				<p><strong>Example usage:</strong></p>
+				<pre>
+	>>>identity = {"name": "Large Metal Cutting Machine", "asset_id": "ast-yhccl1zjue2t", "kpi": "time", "operation": "working"}
+	>>>send_alert(identity, type="Anomaly", probability=95)
+	
+	</pre>
+			</li>
+	
+			<li><h4>Function: <code>store_datapoint(new_datapoint)</code></h4>
+				<p><strong>Description:</strong> Appends the processed datapoint to the already stored historical data.</p>
+				<p><strong>Parameters:</strong></p>
+				<ul>
+					<li><kbd>new_datapoint</kbd> (<em>dict</em>): A dictionary containing the new data point to be stored.</li>
+				</ul>
+				<p><strong>Returns:</strong></p>
+				<p>None</p>
+	
+				<p><strong>Example usage:</strong></p>
+				<pre>
+	>>>new_datapoint = {
+		'time': '2024-10-18 00:00:00+00:00',
+		'asset_id': 'ast-yhccl1zjue2t',
+		'name': 'Large Metal Cutting Machine',
+		'kpi': 'consumption',
+		'operation': 'working',
+		'sum': 0.175342,
+		'avg': 0.001883,
+		'min': 0.001000,
+		'max': 0.012461,
+		'var': 0.001000,
+		'status': 'Normal'
+	}
+	>>>store_datapoint(new_datapoint)
+	
+	</pre>
+			</li>
+
+
+			<hr style="border: 1px solid #000000; margin: 50px auto;">
+
+		<h3 id="on_request_pipeline">on_request_pipeline.py</h3>
+		
+		<ul>
+			<li><h4>Function: <code>get_request(machine_name, asset_id, kpi, operation, timestap_start, timestamp_end, transformation, forecasting)</code></h4>
+				<p>
+					<strong>Description:</strong> Handles requests for historical data transformations or forecasting. Depending on the provided parameters, it either applies feature engineering transformations or performs time-series forecasting using a TDNN (time delay neural network).
+
+				<p><strong>Parameters:</strong></p>
+				<ul>
+					<li><kbd>machine_name</kbd> (<em>str</em>): Name of the machine associated with the time series.</li>
+					<li><kbd>asset_id</kbd> (<em>str</em>): Identifier for the asset.</li>
+					<li><kbd>kpi</kbd> (<em>str</em>): Key Performance Indicator to analyze (e.g., 'time', 'consumption').</li>
+					<li><kbd>operation</kbd> (<em>str</em>): The operation context of the data (e.g., 'working', 'idle').</li>
+					<li><kbd>timestap_start</kbd> (<em>str</em>): Start timestamp for the historical data range </li>
+					<li><kbd>timestamp_end</kbd> (<em>str</em>): End timestamp for the historical data range </li>
+					<li><kbd>transformation</kbd> (<em>str</em>): Specifies the type of transformation for feature engineering:
+						<ul>
+							<li><kbd>'S'</kbd>: Detrending to extract season.</li>
+							<li><kbd>'T'</kbd>: Deseasonalizing to extract trend.</li>
+						</ul>
+					</li>
+					<li><kbd>forecasting</kbd> (<em>bool</em>): Whether to perform forecasting (<kbd>True</kbd>) or just transformation (<kbd>False</kbd>).</li>
+				</ul>
+
+				<p><strong>Returns:</strong></p>
+				<ul>
+					<li><strong>JSON object:</strong></li>
+					<ul>
+						<li>If <kbd>forecasting=True</kbd>: Returns predictions as a JSON object with timestamps and predicted values.</li>
+						<li>If <kbd>forecasting=False</kbd>: Returns transformed historical data as a JSON object.</li>
+					</ul>
+				</ul>
+				<p><strong>Functionality:</strong></p>
+				<ol>
+					<li><strong>Forecasting Mode:</strong>
+						<ul>
+							<li>Retrieves historical data using <kbd>get_historical_data</kbd>.</li>
+							<li>Extracts machine learning models and their parameters using <kbd>get_model_forecast</kbd>.</li>
+							<li>Generates predictions using <kbd>tdnn_forecasting_prediction</kbd> and combines them into a single dataset.</li>
+							<li>Converts the results into a JSON object for output.</li>
+						</ul>
+					</li>
+					<li><strong>Transformation Mode:</strong>
+						<ul>
+							<li>Retrieves historical data for the specified machine, KPI, and operation.</li>
+							<li>Applies transformations (e.g., detrending or deseasonalizing) using <kbd>feature_engineering_pipeline</kbd>.</li>
+							<li>Converts the transformed data into a JSON object for output.</li>
+						</ul>
+					</li>
+				</ol>
+				<p><strong>Example usage:</strong></p>
+				<pre>
+>>> json_forecast = get_request(
+	machine_name="Large Metal Cutting Machine 1",
+	asset_id="ast-yhccl1zjue2t",
+	kpi="time",
+	operation="working",
+	timestap_start="2024-10-17 00:00:00+00:00",
+	timestamp_end="2024-10-17 00:00:00+00:00",
+	transformation=None,
+	forecasting=True
+)
+
+</pre>
+			</li>
+		</ul>
+		
+		<hr style="border: 1px solid #000000; margin: 50px auto;">
+
+	<h3 id="streaming_pipeline">streaming_pipeline.py</h3>
+	<p>The loop continuously operates the following workflow: data acquisition, data cleaning, drift detection, model retraining upon positive result and anomaly identification for alert generation, storing in the database.</p>
+    <ul>
+        <li>
+            <strong>Data acquisition:</strong> fetches a new data point from the stream using the function <code>get_datapoint()</code> (in <code>\src\app\connection_functions.py</code>). 
+            The fetched datapoint includes the field ‘time’, identity fields (<code>asset_id</code>, <code>name</code>, <code>kpi</code>, <code>operation</code>) and feature fields (<code>sum</code>, <code>avg</code>, <code>min</code>, <code>max</code> and <code>var</code>).
+        </li>
+        <li>
+            <strong>Data cleaning:</strong> the validity of the fetched datapoint in terms of logic consistency and range, along with the imputation of missing values is performed into the <code>cleaning_pipeline()</code> function (in <code>\src\app\dataprocessing_functions.py</code>) that one after the other calls the specific functions for performing these operations (<code>validate()</code> and <code>imputer()</code>, also in <code>\src\app\dataprocessing_functions.py</code>). 
+            Altogether, these 3 functions also allow the implementation of another feature: whenever the specific timeseries being received (a time course of a specific KPI for a specific machine) embeds inconsistencies or fails the check range for a sufficient number of consecutive days (arbitrarily set at <code>faulty_aq_tol = 3</code>), then the pipeline calls the function <code>send_alert()</code> (in <code>\src\app\connection_functions.py</code>) to send the email to the user with the detected alert.
+        </li>
+        <li>
+            <strong>Drift detection:</strong> it uses the <code>ADWIN_drift()</code> (in <code>\src\app\dataprocessing_functions.py</code>) to check whether in the stream that is being received a concept drift has occurred which should trigger the retraining of models to avoid performance degradation. 
+            In particular, if the drift is recognized, then the code calls the two functions (from <code>\src\app\dataprocessing_functions.py</code>) deputed to the retraining:
+            <ul>
+                <li><code>ad_train()</code></li>
+                <li><code>tdnn_forecasting_training()</code></li>
+            </ul>
+            Then, the new models are stored in the <code>store.pkl</code> file (in <code>\data\store.pkl</code>) for the following usage.
+        </li>
+        <li>
+            <strong>Anomaly detection:</strong> the last train model of the Isolation Forest for the specific timeseries the current datapoint belongs to is retrieved and used to predict whether it is anomalous or not. 
+            Upon a positive result, the <code>send_alert()</code> function (in <code>\src\app\connection_functions.py</code>) is called to notify the event to the user.
+        </li>
+        <li>
+            <strong>Data storage:</strong> the function <code>store_datapoint()</code> (in <code>\src\app\connection_functions.py</code>) takes care of appending the current processed datapoint to the historical data.
+        </li>
+    </ul>
+    
+	<hr style="border: 1px solid #000000; margin: 50px auto;">
+	
+	<h3 id="dataprocessing_functions">dataprocessing_functions.py</h3>
+
+	<ul>
+		<li><h4>Function: <code>get_model_forecast(x)</code></h4>
+			<p><strong>Description:</strong> Loads the last trained model for forecasting from "store.pkl" based on the identity fields of the passed datapoint <kbd>x</kbd> (name, asset ID, KPI, and operation). It returns the model along with its parameters and statistics.</p>
+
+			<p><strong>Parameters:</strong></p>
+			<ul>
+				<li><kbd>x</kbd> (<em>dict</em>): the datapoint from which extract the follwing values for the model retrieval.
+					<ul>
+						<li><kbd>'name'</kbd>: Machine name.</li>
+						<li><kbd>'asset_id'</kbd>: Asset identifier.</li>
+						<li><kbd>'kpi'</kbd>: Key Performance Indicator (e.g., 'time').</li>
+						<li><kbd>'operation'</kbd>: The operation context (e.g., 'working').</li>
+					</ul>
+				</li>
+			</ul>
+
+			<p><strong>Returns:</strong></p>
+			<p>A dictionary with the sub-features as keys (e.g., 'min', 'max', 'avg', 'sum') and their corresponding values as lists containing:
+				<ul>
+					<li>Keras model (model architecture and weights),</li>
+					<li>Best parameters (best hyperparameters for the model),</li>
+					<li>Stats (statistics used during training).</li>
+				</ul>
+			</p>
+
+			<h4>Example Usage:</h4>
+			<pre>
+>>>current_datapoint = {'time': '2024-09-17 00:00:00+00:00', 
+'asset_id': 'ast-o8xtn5xa8y87', 
+'name': 'riveting', 
+'kpi': 'good_cycles', 
+'operation': 'working',
+'sum': 24025.0, 
+'avg': 2280.0, 
+'min': 330.0, 
+'max': 1224.0, 
+'var': nan}  
+
+>>>models = get_model_forecast(current_datapoint)
+
+</pre>
+		</li>
+
+		<li><h4>Function: <code>update_model_forecast(x, model)</code></h4>
+			<p><strong>Description:</strong> Overwrite the model present in 'store.pkl' with the new forecasting models. </p>
+
+			<p><strong>Parameters:</strong></p>
+				<ul>
+					<li><kbd>x</kbd> (<em>dict</em>): A dictionary containing the following keys:
+						<ul>
+							<li><kbd>'name'</kbd>: Machine name.</li>
+							<li><kbd>'asset_id'</kbd>: Asset identifier.</li>
+							<li><kbd>'kpi'</kbd>: Key Performance Indicator (e.g., 'time').</li>
+							<li><kbd>'operation'</kbd>: The operation context (e.g., 'working').</li>
+						</ul>
+					</li>
+					<li><kbd>model</kbd> (<em>dict</em>): A dictionary where the keys are sub-features (e.g., 'min', 'max', 'avg', 'sum'), and the values are lists containing:
+						<ul>
+							<li>Keras model (model architecture and weights),</li>
+							<li>Best parameters (best hyperparameters for the model),</li>
+							<li>Stats (statistics used during training).</li>
+						</ul>
+					</li>
+				</ul>
+
+				<p><strong>Returns:</strong></p>
+				<p>None. The function updates or creates a Pickle file with the new models, parameters, and statistics for the specified machine and KPI.</p>
+
+
+				<h4>Example Usage:</h4>
+				<pre>
+>>>current_datapoint = {'time': '2024-09-17 00:00:00+00:00', 
+'asset_id': 'ast-o8xtn5xa8y87', 
+'name': 'riveting', 
+'kpi': 'good_cycles', 
+'operation': 'working',
+'sum': 24025.0, 
+'avg': 2280.0, 
+'min': 330.0, 
+'max': 1224.0, 
+'var': nan}  
+
+>>>new_model = {
+	'sum': [keras_model, best_params, stats],
+	'avg': [keras_model, best_params, stats],
+    'min': [keras_model, best_params, stats],
+    'max': [keras_model, best_params, stats]
+}
+
+>>>update_model_forecast(current_datapoint, new_model)
+</pre>
+		</li>
+		<li>
+			<h4>Function: <code>cleaning_pipeline(x)</code></h4>
+
+				<p><strong>Description:</strong>This function enwrappes the first two main stages of the cleaning process: data validation and imputation. Additionally it check also if a problem has been reported during these stages and if the number of consecutive signalling excess a arbitrarily set threshold ('faulty_aq_tol') then it notifies the alert.</p>
+				
+				<p><strong>Parameters:</strong></p>
+					<ul>
+						<li><kbd>x</kbd>(<em>dict</em>):A dictionary representing a single data point. This dictionary should include fields such as <code>time</code>, <code>asset_id</code>, <code>name</code>, <code>kpi</code>, <code>operation</code>, and statistical metrics like <code>sum</code>, <code>avg</code>, <code>min</code>, and <code>max</code>.</li>
+					</ul>
+				
+				<p><strong>Returns:</strong></p>
+				<p>The function returns the cleaned data point (<code>dict</code>) if it passes validation and imputation processes. If the data point is irreparably corrupted, <code>None</code> is returned, and an alert may be triggered.</p>
+
+				<p><strong>Functionality:</strong></p>
+				<ol>
+					<li>Validates the data point to ensure the required fields are present and in the correct format.</li>
+					<li>Checks the consistency of statistical values (<code>min <= avg <= max <= sum</code>).</li>
+					<li>Imputes missing values using methods like Exponential Smoothing or Last Value Carry Forward (LVCF) if needed (i.e., if the imputed value is not valid according to the consistency rules and range constraints).</li>
+					<li>Updates internal counters to track faulty acquisitions.</li>
+					<li>Triggers an alert if the number of consecutive faulty acquisitions exceeds a defined threshold (<code>faulty_aq_tol</code>).</li>
+				</ol>
+				<p><strong>Example usage:</strong></p>
+				<pre>
+					
+>>>current_datapoint = {'time': '2024-09-17 00:00:00+00:00', 
+'asset_id': 'ast-o8xtn5xa8y87', 
+'name': 'riveting', 
+'kpi': 'good_cycles', 
+'operation': 'working',
+'sum': 24025.0, 
+'avg': 2280.0, 
+'min': 330.0, 
+'max': 1224.0, 
+'var': nan}  
+
+>>>cleaned_data = cleaning_pipeline(current_datapoint)
+</pre>
+
+		</li>
+		<li><h4>Function: <code>ADWIN_drift(x)</code></h4>
+			<p><strong>Description:</strong> This function uses the ADWIN drift detector to identify drift points in the multivariate time series data for a given machine and KPI (i.e., the most recent values of the timeseries stored in 'store.pkl').</p>
+				
+			<p><strong>Parameters:</strong></p>
+			<ul>
+				<li><kbd>x</kbd> (<em>dict</em>): A dictionary containing the time series data for a feature, typically with keys like <kbd>name</kbd>, <kbd>asset_id</kbd>, <kbd>kpi</kbd>, and <kbd>operation</kbd>. This is used to retrieve the specific time series data for analysis.</li>
+			</ul>
+			
+			<p><strong>Returns:</strong></p>
+			<p>If drift is detected, it returns <kbd>True</kbd> and the drift points; otherwise, it returns <kbd>False</kbd>.</p>
+			
+			
+			<p><strong>Example usage:</strong></p>
+				<pre>
+
+>>>current_datapoint = get_datapoint(5)
+>>>drift_flag = ADWIN_drift(current_datapoint)
+</pre>
+		</li>
+
+		
+	
+		<li>
+			<h4>Function: <code>ad_train(historical_data)</code></h4>
+				<p><strong>Description:</strong> This function trains an anomaly detection model using the Isolation Forest algorithm. It processes the provided historical data, trains the model with different contamination rates, and it chooses the best according to the silhouette coefficient.</p>
+				
+				<p><strong>Parameters:</strong></p>
+				<ul>
+					<li><kbd>historical_data</kbd> (<em>DataFrame</em>): Historical data that will be used to train the model. </li>
+				</ul>
+
+				<p><strong>Returns:</strong></p>
+				<p>The trained Isolation Forest model.</p>
+
+				<p><strong>Example usage:</strong></p>
+        		<pre>
+
+>>>model = ad_train(historical_data)
+</pre>
+		</li>
+
+		<li><h4>Function: <code>ad_predict(x, model)</code></h4>
+		<p><strong>Description:</strong> This function uses the trained anomaly detection model to predict whether a given data point is anomalous or normal. It also calculates the probability that the prediction is correct.</p>
+
+		<p><strong>Parameters:</strong></p>
+		<ul>
+			<li><kbd>x</kbd> (<em>dict</em>): the current datapoint that needs to be classified.</li>
+			<li><kbd>model</kbd> (<em>Isolation Forest model</em>): The trained model previosly stored into 'store.pkl'.</li>
+		</ul>
+
+		<p><strong>Returns:</strong></p>
+		<p>A tuple:
+			<ul>
+			<li><kbd>status</kbd>: A string indicating the status of the data point ('Anomaly' or 'Normal').</li>
+			<li><kbd>anomaly_prob</kbd>: An integer representing the probability of the anomaly (from 0 to 100).</li>
+			</ul>
+		</p>
+
+		<p><strong>Example usage:</strong></p>
+		<pre>
+
+>>>x = {
+	'time': '2024-10-18 00:00:00+00:00',
+	'asset_id': 'ast-yhccl1zjue2t',
+	'name': 'Large Metal Cutting Machine',
+	'kpi': 'consumption',
+	'operation': 'working',
+	'sum': 0.175342,
+	'avg': 0.001883,
+	'min': 0.001000,
+	'max': 0.012461,
+	'var': 0.001000
+}
+
+>>> current_datapoint = get_datapoint(1)
+>>> model = get_model_ad(current_datapoint)
+>>> status, anomaly_probability = ad_predict(current_datapoint, model)
+
+</pre>
+		</li>
+
+		<li><h4>Function: <code>feature_engineering_pipeline(dataframe, kwargs)</code></h4>
+			<p><strong>Description:</strong> This function performs feature engineering on the time series data. Depending on the input parameters (provided via <kbd>kwargs</kbd>), it applies operations such as making the data stationary, detrending, deseasonalizing, extracting residuals, and scaling the features.</p>
+
+			<p><strong>Parameters:</strong></p>
+			<ul>
+				<li><kbd>dataframe</kbd> (<em>DataFrame</em>): A filtered version of the dataset for a given machine, KPI, and operation. It contains columns like <kbd>sum</kbd>, <kbd>avg</kbd>, <kbd>min</kbd>, <kbd>max</kbd>, and <kbd>var</kbd>, along with time-related columns.</li>
+				<li><kbd>kwargs</kbd> (<em>dict</em>): A dictionary containing flags that determine the transformations to apply. The available flags are:
+				<ul>
+					<li><kbd>'make_stationary'</kbd>: Make the data stationary (default is <kbd>False</kbd>).</li>
+					<li><kbd>'detrend'</kbd>: Detrend the time series (default is <kbd>False</kbd>).</li>
+					<li><kbd>'deseasonalize'</kbd>: Remove seasonality from the data (default is <kbd>False</kbd>).</li>
+					<li><kbd>'get_residuals'</kbd>: Extract residuals from the data (default is <kbd>False</kbd>).</li>
+					<li><kbd>'scaler'</kbd>: Apply z-score scaling to the data (default is <kbd>False</kbd>).</li>
+				</ul>
+				</li>
+			</ul>
+
+			<p><strong>Returns:</strong></p>
+			<p>A <em>DataFrame</em> with the transformed features based on the specified operations (e.g., stationary, detrended, deseasonalized, etc.) and the original <kbd>time</kbd> and feature columns.</p>
+
+			<p><strong>Example usage:</strong></p>
+			<pre>
+>>>data = {
+	'time': ['2024-10-17', '2024-10-18', '2024-10-19'],
+    'sum': [0.175342, 0.027339, 0.000000],
+	'avg': [0.001883, 0.007630, 0.000000],
+	'min': [0.001000, 0.003832, 0.000000],
+	'max': [0.012461, 0.002216, 0.000000],
+	'var': [0.12134,, 0.23466, 0.091245]
+}
+>>>df = pd.DataFrame(data)
+>>>kwargs = {
+	'make_stationary': True,
+	'detrend': False,
+	'deseasonalize': True,
+	'get_residuals': False,
+	'scaler': True
+}
+>>>transformed_df = feature_engineering_pipeline(df, kwargs)
+
+</pre>
+		</li>
+		
+		<li><h4>Function: <code>extract_features(kpi_name, machine_name, operation_name, data)</code></h4>
+			<p><strong>Description:</strong> This function filters the dataset based on the specified machine name, KPI name, and operation. It returns a dataframe with the filtered data for the given parameters.</p>
+
+			<p><strong>Parameters:</strong></p>
+			<ul>
+				<li><kbd>kpi_name</kbd> (<em>str</em>): The name of the KPI to filter by (e.g., 'time').</li>
+				<li><kbd>machine_name</kbd> (<em>str</em>): The name of the machine (e.g., 'Laser Cutting 1').</li>
+				<li><kbd>operation_name</kbd> (<em>str</em>): The operation associated with the data (e.g., 'working').</li>
+				<li><kbd>data</kbd> (<em>DataFrame</em>): The dataframe to filter based on the provided parameters.</li>
+			</ul>
+
+			<p><strong>Returns:</strong></p>
+			<p>A <em>DataFrame</em> containing only the rows that match the specified <kbd>machine_name</kbd>, <kbd>kpi_name</kbd>, and <kbd>operation_name</kbd>.</p>
+
+			<p><strong>Functionality:</strong></p>
+			<p>This function filters the dataset for a specific machine, KPI, and operation, allowing you to focus on the relevant subset of data for analysis. The resulting dataframe is sorted by the <kbd>time</kbd> column.</p>
+
+			<p><strong>Example usage:</strong></p>
+			<pre>
+>>>data = {
+		'time': ['2024-10-17', '2024-10-18', '2024-10-19'],
+		'name': ['metal_cutting', 'metal_cutting', 'metal_cutting'],
+		'asset_id': ['ast-yhccl1zjue2t', 'ast-yhccl1zjue2t', 'ast-yhccl1zjue2t'],
+		'kpi': ['time', 'time', 'time'],
+		'operation': ['working', 'working', 'working'],
+		'sum': [0.175342, 0.027339, 0.000000],
+		'avg': [0.001883, 0.007630, 0.000000],
+		'min': [0.001000, 0.003832, 0.000000],
+		'max': [0.012461, 0.002216, 0.000000],
+		'var': [0.12134,, 0.23466, 0.091245]
+		}
+>>>df = pd.DataFrame(data)
+>>>filtered_data = extract_features('time', 'metal_cutting', 'working', df)
+</pre>
+		</li>
+
+		<li><h4>Function: <code>tdnn_forecasting_training(series, n_trials=10)</code></h4>
+			<p><strong>Description:</strong> This function trains a Time-Delay Neural Network (TDNN) on a given time series. It uses Optuna to perform hyperparameter optimization and identifies the best TDNN model and parameters for forecasting tasks.</p>
+
+			<p><strong>Parameters:</strong></p>
+			<ul>
+				<li><kbd>series</kbd> (<em>DataFrame</em>): A time series dataframe with a <kbd>'time'</kbd> column and one of the feature columns (<kbd>'min'</kbd>, <kbd>'max'</kbd>, <kbd>'sum'</kbd>, or <kbd>'avg'</kbd>).</li>
+				<li><kbd>n_trials</kbd> (<em>int</em>, optional): Number of trials for Optuna's hyperparameter search. Default is 10.</li>
+			</ul>
+
+			<p><strong>Returns:</strong></p>
+			<ul>
+				<li><kbd>best_model_TDNN</kbd>: The TDNN model trained with the best hyperparameters.</li>
+				<li><kbd>best_params</kbd>: A dictionary containing the best hyperparameters (<kbd>'tau'</kbd>, <kbd>'lr'</kbd>, <kbd>'epochs'</kbd>, <kbd>'hidden_units'</kbd>).</li>
+				<li><kbd>stats</kbd>: An array containing the mean and standard deviation of the input (<kbd>x_mean, x_std</kbd>) and output (<kbd>y_mean, y_std</kbd>) for normalization.</li>
+			</ul>
+
+			<p><strong>Example usage:</strong></p>
+			<pre>
+>>>data = {
+		'time': ['2024-10-17', '2024-10-18', '2024-10-19'],
+		'sum': [0.175342, 0.027339, 0.000000]
+		}
+>>>df = pd.DataFrame(data)
+>>>best_model, best_params, stats = tdnn_forecasting_training(df, n_trials=10)
+
+</pre>
+		</li>
+		
+		<li><h4>Function: <code>tdnn_forecasting_prediction(model, tau, time_series, stats, timestamp_init=None, timestamp_end=None)</code></h4>
+			<p><strong>Description:</strong> This function uses a trained TDNN model to forecast future values in a time series.</p>
+
+			<p><strong>Parameters:</strong></p>
+			<ul>
+				<li><kbd>model</kbd>: The trained TDNN model.</li>
+				<li><kbd>tau</kbd> (<em>int</em>): The length of the input sliding window used for the TDNN model.</li>
+				<li><kbd>time_series</kbd> (<em>DataFrame</em>): A dataframe containing the <kbd>'time'</kbd> column and one feature column (<kbd>'min'</kbd>, <kbd>'max'</kbd>, <kbd>'sum'</kbd>, or <kbd>'avg'</kbd>).</li>
+				<li><kbd>stats</kbd> (<em>list</em>): A list containing normalization statistics (<kbd>x_mean, x_std, y_mean, y_std</kbd>).</li>
+				<li><kbd>timestamp_init</kbd> (<em>str</em>, optional): The start date for the forecast. Defaults to the day after the last timestamp in the input data.</li>
+				<li><kbd>timestamp_end</kbd> (<em>str</em>, optional): The end date for the forecast. Defaults to 7 days after <kbd>timestamp_init</kbd>.</li>
+			</ul>
+
+			<p><strong>Returns:</strong></p>
+			<p>A <em>DataFrame</em> containing two columns: <kbd>'time'</kbd> (forecast timestamps) and the predicted values for the specified feature.</p>
+
+			<p><strong>Example usage:</strong></p>
+			<pre>
+>>>time_series = pd.DataFrame({
+	'time': ['2024-10-17', '2024-10-18', '2024-10-19', ...],
+	'avg': [0.001883, 0.007630, 0.000000, ...]
+		})
+>>>stats = [0.0042143 , 0.00472052, 0.00417373, 0.00474381]  # Example stats [x_mean, x_std, y_mean, y_std]
+>>>model = best_model  # Use the model from tdnn_forecasting_training
+>>>tau = best_params['tau']
+>>>predictions_df = tdnn_forecasting_prediction(model, tau, time_series, stats)
+
+</pre>
+		</li>
+
+
+    </main>
+</body>
+</html>
