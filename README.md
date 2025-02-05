@@ -11,36 +11,27 @@ The repository contains the following files and directories
 ```
 📂 data-preprocessing-
 ├── 📂 data
+|   ├── ⛁ alerts_configuration.json
 │   ├── ⛁ cleaned_predicted_dataset.json
 │   ├── ⛁ historical_dataset.json
-│   ├── ⛁ new_datapoint.json
 │   ├── ⛁ original_adapted_dataset.json
 │   └── ⊞ store.pkl
 ├── 📂 docs
 │   └── 📖 index.html
 ├── 📂 src
 │   ├── 📂 app
-│   │   ├── 📂 explainability
-│   │   │   └── 📖 explainability.html 
-|   |   ├── 📂 notification
-│   │   │   └── 📤 mail_sender.py
-│   │   │   ├── 📤 publisher.py
-│   │   │   └── 📩 request.py
-|   |   ├── 📂 real_time
-│   │   │   ├── 📖 message.py
-│   │   │   ├── 📩 kpi_request.py
-│   │   │   └── 📤 kpi_response.py
-│   │   ├── 🤖 config.py
-│   │   ├── 🤖 connection_functions.py
-│   │   ├── 🤖 dataprocessing_functions.py
-│   │   ├── 🤖 fix_data.py
-│   │   ├── 🤖 initialize.py
-│   │   ├── 🤖 streaming_pipeline.py
-│   │   ├── 🌐 main.py
-│   │   ├── ⚡ on_request_pipeline.py
-│   │   └── ⚡ streaming_pipeline.py
-│   └── 📂 tests
-│       └── 🧪 api_test.py
+|       ├── 📂 notification
+│       │   └── 📤 mail_sender.py
+│       ├── 🤖 config.py
+│       ├── 🤖 connection_functions.py
+│       ├── 🤖 dataprocessing_functions.py
+│       ├── 🤖 fix_data.py
+│       ├── 🤖 initialize.py
+│       ├── 🤖 streaming_pipeline.py
+│       ├── 🌐 main.py
+│       ├── ⚡ on_request_pipeline.py
+│       ├── ⚡ streaming_pipeline.py
+│       └── ⚡ test_myupdate.ipynb
 ├── 🔄 .gitignore
 ├── 🐳 Dockerfile
 ├── 📖 README.md
@@ -54,12 +45,12 @@ The repository contains the following files and directories:
 
 - **`📂 data`**  
    A directory containing datasets used in the project.
+     - **`⛁ alerts_configuration.json`**  
+      A JSON file containing the customed alerts that have been created.
    - **`⛁ cleaned_predicted_dataset.json`**  
       A JSON file containing the cleaned and predicted dataset.
    - **`⛁ historical_dataset.json`**  
-      A JSON file containing historical data.
-   - **`⛁ new_datapoint.json`**  
-      A JSON file containing new data points.
+      A JSON file containing historical data.\
    - **`⛁ original_adapted_dataset.json`**  
       A JSON file containing the original adapted dataset.
    - **`⊞ store.pkl`**  
@@ -74,26 +65,10 @@ The repository contains the following files and directories:
    A directory containing the source code.
    - **`📂 app`**  
       A directory containing the main application logic.
-      - **`📂 explainability`**  
-         A directory with explainability-related files.
-         - **`📖 explainability.html`**  
-            An HTML file providing an explanation of the methods used.
       - **`📂 notification`**  
          A directory with notification-related logic.
          - **`📤 mail_sender.py`**  
             A Python script to send notification emails.
-         - **`📤 publisher.py`**  
-            A Python script for publishing results.
-         - **`📩 request.py`**  
-            A Python script that handles KPI requests.
-      - **`📂 real_time`**  
-         A directory containing real-time data processing logic.
-         - **`📖 message.py`**  
-            A Python script for handling messages.
-         - **`📩 kpi_request.py`**  
-            A Python script for processing KPI requests in real time.
-         - **`📤 kpi_response.py`**  
-            A Python script for processing KPI responses in real time.
       - **`🤖 config.py`**  
          A Python script containing configuration settings.
       - **`🤖 connection_functions.py`**  
@@ -112,11 +87,8 @@ The repository contains the following files and directories:
          A Python script defining the pipeline for processing incoming requests.
       - **`⚡ streaming_pipeline.py`**  
          Another Python script for handling streaming data pipelines.
-
-   - **`📂 tests`**  
-      A directory containing test scripts.
-      - **`🧪 api_test.py`**  
-         A Python script with unit tests for the API.
+     - **`⚡ test_myupdate.ipynb`**  
+      THIS IS THE FILE TO RUN TO TEST THE NEW FUNCTIONALITIES.
 
 - **`🔄 .gitignore`**  
    A file specifying which files Git should ignore.
