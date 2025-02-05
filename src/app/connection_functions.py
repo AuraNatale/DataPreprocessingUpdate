@@ -4,7 +4,6 @@ import pandas as pd
 import config as config
 from datetime import timedelta
 from notification.mail_sender import MailSender
-from real_time.request import KPIStreamingRequest, KPIValidator
 import requests
 
 
@@ -37,23 +36,6 @@ def get_datapoint(i):
 
     return datapoint
 
-
-def get_next_datapoint(kpi_validator: KPIValidator, file=config.CLEANED_PREDICTED_DATA_PATH):
-    """
-    This function yields the next datapoint from the dataset
-
-    :param kpi_validator: The request object containing the kpis, machines and operations
-    :param file: The file containing the dataset
-    :return: The next datapoint
-    """
-    data = pd.read_json(file)
-    data = data[data['kpi'].isin(kpi_validator.kpis)]
-    data = data[data['name'].isin(kpi_validator.machines)]
-    data = data[data['operation'].isin(kpi_validator.operations)]
-
-    # yield each record
-    for index, row in data.iterrows():
-        yield row.to_dict()
 
 
 def get_historical_data(machine_name, asset_id, kpi, operation, timestap_start, timestamp_end):
